@@ -35,3 +35,11 @@ jspm_packages
 
 # Optional REPL history
 .node_repl_history
+
+# WebStorm files
+.idea
+
+# resource files
+data
+data_src
+img
