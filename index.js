@@ -22,7 +22,6 @@ app.get('/img/:filename', function(req, res){
   res.sendFile(path.join(__dirname, "/img", req.params.filename));
 });
 
-app.use(express.static(path.join(__dirname, "/img")));
 app.listen(port, '0.0.0.0', function onStart(err) {
   if (err) {
     console.log(err);
