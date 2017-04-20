@@ -11,7 +11,7 @@ cvProvider.init(server_url);
 
 var app = express();
 app.use(cors());
-app.get('/cv/:name/:lang', function (req, res) {
+app.get('/cv/:name/:lang*?', function (req, res) {
   cvProvider.getCV(req.params.name, req.params.lang || 'en').then(function(cv){
     res.send(cv);
   });

@@ -18,7 +18,7 @@ function transfromFile(input, output){
         return;
       }
       var fileName = path.basename(output);
-      var cvName = fileName.substring(0, fileName.indexOf('.'));
+      var cvName = fileName.substring(0, fileName.lastIndexOf('.'));
       var codeToSave = result.code.replaceAll("{server_url}", server_url).replaceAll('{cv_name}', cvName);
       fs.writeFile(output, codeToSave, function(err) {
         if(err) {
