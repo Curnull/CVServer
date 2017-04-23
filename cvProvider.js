@@ -9,30 +9,44 @@ String.prototype.replaceAll = function(search, replacement) {
   return target.split(search).join(replacement);
 };
 
+var transformedFilesModifyDates = {};
 function transfromFile(input, output){
   return new Promise(function(resolve, reject) {
-    console.log("compiling " + input);
-    babel.transformFile(input, {}, function(err, result){
+    fs.stat(input, function(err, stats) {
       if(err){
         reject(err);
         return;
       }
-      var fileName = path.basename(output);
-      var cvName = fileName.substring(0, fileName.lastIndexOf('.'));
-      var codeToSave = result.code.replaceAll("{server_url}", server_url).replaceAll('{cv_name}', cvName);
-      fs.writeFile(output, codeToSave, function(err) {
-        if(err) {
+      var mtime = stats.mtime.getTime();
+      if(mtime === transformedFilesModifyDates[input]){
+        console.log("file " + input + "is already compiled");
+        resolve(false);
+        return;
+      }
+      console.log("compiling " + input);
+      babel.transformFile(input, {}, function(err, result){
+        if(err){
           reject(err);
           return;
         }
-        resolve();
+        var fileName = path.basename(output);
+        var cvName = fileName.substring(0, fileName.lastIndexOf('.'));
+        var codeToSave = result.code.replaceAll("{server_url}", server_url).replaceAll('{cv_name}', cvName);
+        fs.writeFile(output, codeToSave, function(err) {
+          if(err) {
+            reject(err);
+            return;
+          }
+          transformedFilesModifyDates[input] = mtime;
+          console.log("file " + output + " was saved!");
+          resolve(true);
+        });
       });
     });
   });
 }
 
 var server_url = '';
-
 module.exports = {
   init: function(_server_url) {
     server_url = _server_url;
@@ -46,9 +60,7 @@ module.exports = {
         for(var index in filenames){
           var path = filenames[index];
           var out = path.replace("_src", "");
-          transfromFile(path, out).then(function(){
-            console.log("The " + out + " was saved!");
-          }).catch(function(err) {
+          transfromFile(path, out).catch(function(err) {
             throw new Error(err);
           });
         }
@@ -58,9 +70,14 @@ module.exports = {
   getCV: function(name, lang) {
     return new Promise(function(resolve, reject) {
       var out = "./data/" + name + ".js";
-      transfromFile('./data_src/' + name + '.js', out).then(function(){
-        delete require.cache[require.resolve(out)]
+
+      transfromFile('./data_src/' + name + '.js', out).then(function (isTransformed) {
+        if(isTransformed){
+          delete require.cache[require.resolve(out)];
+        }
         resolve(require(out).default(lang));
+      }).catch(function(err){
+        reject(err);
       });
     });
   }
