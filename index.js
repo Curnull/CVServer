@@ -22,9 +22,7 @@ app.get('/cv/:name/:lang*?', function (req, res) {
 
 });
 
-app.get('/img/:filename', function(req, res){
-  res.sendFile(path.join(__dirname, "/img", req.params.filename));
-});
+app.use(express.static(path.join(__dirname, "./resources")));
 
 app.listen(port, '0.0.0.0', function onStart(err) {
   if (err) {

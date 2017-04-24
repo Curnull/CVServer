@@ -10,16 +10,17 @@ String.prototype.replaceAll = function(search, replacement) {
 };
 
 var transformedFilesModifyDates = {};
-function transfromFile(input, output){
+function transfromFile(i, o){
   return new Promise(function(resolve, reject) {
+    var input = path.join(__dirname, i);
+    var output = path.join(__dirname, o);
     fs.stat(input, function(err, stats) {
       if(err){
         reject(err);
         return;
       }
       var mtime = stats.mtime.getTime();
-      if(mtime === transformedFilesModifyDates[input]){
-        console.log("file " + input + "is already compiled");
+      if (mtime === transformedFilesModifyDates[input]) {
         resolve(false);
         return;
       }
@@ -31,7 +32,7 @@ function transfromFile(input, output){
         }
         var fileName = path.basename(output);
         var cvName = fileName.substring(0, fileName.lastIndexOf('.'));
-        var codeToSave = result.code.replaceAll("{server_url}", server_url).replaceAll('{cv_name}', cvName);
+        var codeToSave = result.code.replaceAll("{server_url}", server_url);
         fs.writeFile(output, codeToSave, function(err) {
           if(err) {
             reject(err);
@@ -68,14 +69,19 @@ module.exports = {
     });
   },
   getCV: function(name, lang) {
+    var normalizedName = name
+      .toLowerCase()
+      .replaceAll('.', '')
+      .replaceAll('_', '')
+      .replace('-', '');
     return new Promise(function(resolve, reject) {
-      var out = "./data/" + name + ".js";
+      var out = "./data/" + normalizedName + ".js";
 
-      transfromFile('./data_src/' + name + '.js', out).then(function (isTransformed) {
+      transfromFile('./data_src/' + normalizedName + '.js', out).then(function (isTransformed) {
         if(isTransformed){
           delete require.cache[require.resolve(out)];
         }
-        resolve(require(out).default(lang));
+        resolve(require(out).default(lang, name));
       }).catch(function(err){
         reject(err);
       });
